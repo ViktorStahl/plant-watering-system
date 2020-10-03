@@ -13,14 +13,10 @@
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-
+// The config.h is needed to set wifi credentials and mqtt broker IP.
+#include "config.h"
 
 /* **** Defines **** */
-
-#define wifi_ssid "Peter"
-#define wifi_password "Lingon53"
-
-#define mqtt_server "192.168.1.19"
 
 #define moisture_topic "sensor/moisture"
 
