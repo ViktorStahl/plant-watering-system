@@ -100,7 +100,7 @@ void setup() {
   Serial.begin(9600);
   Serial.println("\nI am awake!");
   setup_wifi();           //Connect to Wifi network
-  client.setServer(mqtt_server, 1883);    // Configure MQTT connexion
+  client.setServer(mqtt_server, mqtt_port);    // Configure MQTT connexion
   client.setCallback(callback);           // callback function to execute when a MQTT message
 }
 
