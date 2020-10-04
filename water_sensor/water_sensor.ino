@@ -18,16 +18,22 @@
 
 /* **** Defines **** */
 
-#define moisture_topic "sensor/moisture"
-
 #define MOISTURE_SENSOR     (0u)
 #define AIR                 (850)
 #define WATER               (450)
 #define EARTH_SEMI_MOIST    (600)
 
+#define MAC_LEN             (6u)
+#define TOPIC_MAC_OFFSET    (5u)
+
 /* **** Type Definitions **** */
 
 /* **** Global Variables **** */
+
+/* **** Static Variables **** */
+
+static byte mac[MAC_LEN];
+static char moisture_topic[] = "home/00:00:00:00:00:00/moisture";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -52,6 +58,17 @@ void runTest7() {
   Serial.println(F("What... I'm not asleep?!?"));      // it will never get here
 }
 
+void printMAC(const byte* mac) {
+  for (int i = 0; i < MAC_LEN; i++)
+  {
+    Serial.print(mac[i], HEX);
+    if (i != MAC_LEN - 1)
+    {
+      Serial.print(":");
+    }
+  }
+}
+
 static void setup_wifi() {
   delay(10);
   Serial.print("\nConnecting to ");
@@ -68,6 +85,10 @@ static void setup_wifi() {
   Serial.println("WiFi OK ");
   Serial.print("=> ESP8266 IP address: ");
   Serial.print(WiFi.localIP());
+  Serial.println();
+  WiFi.macAddress(mac);
+  Serial.print("MAC address: ");
+  printMAC(mac);
   Serial.println();
 }
 
@@ -86,8 +107,17 @@ static void reconnect() {
   }
 }
 
-static void sendMoisture(int moisture) {
+static void setup_mqtt_topic(char* topicStr, const byte* macAdr) {
+  char macPart[3];
+  for (int i = 0; i < MAC_LEN; i++)
+  {
+    sprintf(macPart, "%02X", mac[i]);
+    int topicIdx = TOPIC_MAC_OFFSET + i * 3;
+    memcpy((void*)&topicStr[topicIdx], macPart, (2 * sizeof(char)));
+  }
+}
 
+static void sendMoisture(int moisture) {
   client.publish(moisture_topic, String(moisture).c_str(), true);
 }
 
@@ -100,6 +130,7 @@ void setup() {
   Serial.begin(9600);
   Serial.println("\nI am awake!");
   setup_wifi();           //Connect to Wifi network
+  setup_mqtt_topic(moisture_topic, mac);       // Set unique MQTT topic 
   client.setServer(mqtt_server, mqtt_port);    // Configure MQTT connexion
   client.setCallback(callback);           // callback function to execute when a MQTT message
 }
@@ -114,9 +145,10 @@ void loop() {
                                     // but actually the LED is on; this is because
                                     // it is active low on the ESP-01)
   delay(1000);                      // Wait for a second
-  digitalWrite(LED_BUILTIN, HIGH);  // Turn the LED off by making the voltage HIGH
   int moisture = readMoisture();
   sendMoisture(moisture);
-  delay(2000);                      // Wait for two seconds (to demonstrate the active low LED)
+  digitalWrite(LED_BUILTIN, HIGH);  // Turn the LED off by making the voltage HIGH
+
+  delay(300000);                      // Wait for five minutes (to demonstrate the active low LED)
   // runTest7();
 }
